@@ -37,7 +37,6 @@ shell.on("init", function() {
   canvas.height = 500
   document.body.appendChild(canvas)
   context = canvas.getContext("2d")
-
 })
 
 //Fired once per game tick
