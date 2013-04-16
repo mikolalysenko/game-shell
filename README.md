@@ -14,7 +14,6 @@ It is NOT:
 * Responsible for rendering
 * An entity/component system
 
-
 # Example
 
 ```javascript
@@ -65,6 +64,8 @@ shell.on("render", function(frame_time) {
   context.fillRect(player_x-10, player_y-10, 20, 20)
 })
 ```
+
+
 
 # Install
 
