@@ -65,7 +65,7 @@ shell.on("render", function(frame_time) {
   context.fillRect(player_x-10, player_y-10, 20, 20)
 })
 ```
-(Try this example in your browser right now!)[http://mikolalysenko.github.io/game-shell/]
+[Try this example in your browser right now!](http://mikolalysenko.github.io/game-shell/)
 
 # Install
 
