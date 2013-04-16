@@ -1,0 +1,49 @@
+{
+  "name": "game-shell",
+  "version": "0.0.0",
+  "description": "Ready-to-go game shell",
+  "main": "shell.js",
+  "directories": {
+    "example": "example"
+  },
+  "dependencies": {
+    "domready": "~0.2.11",
+    "ever": "~0.0.3",
+    "invert-hash": "~0.0.0",
+    "lower-bound": "~0.0.1",
+    "iota-array": "~0.0.0",
+    "raf": "~0.0.1",
+    "uniq": "~0.0.2",
+    "vkey": "~0.0.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "browservefy example/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mikolalysenko/game-shell.git"
+  },
+  "keywords": [
+    "game",
+    "shell",
+    "canvas",
+    "webgl",
+    "input",
+    "binding",
+    "keyboard",
+    "mouse",
+    "event",
+    "request",
+    "animation",
+    "frame",
+    "raf",
+    "tick",
+    "clock",
+    "engine"
+  ],
+  "author": "Mikola Lysenko",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "gitHead": "aeda32c1ed595c725ef36d2ddd1c41d54a9b895c"
+}
