@@ -65,7 +65,7 @@ shell.on("render", function(frame_time) {
 })
 ```
 
-
+You can try it yourself in your browser!]
 
 # Install
 
