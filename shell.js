@@ -64,8 +64,10 @@ function physicalKeyCode(key) {
 //Game shell
 function GameShell() {
   EventEmitter.call(this)
-  this._curKeyState = new Array(keyNames.length)
-  this._prevKeyState = new Array(keyNames.length)
+  this._curKeyState  = new Array(keyNames.length)
+  this._pressCount   = new Array(keyNames.length)
+  this._releaseCount = new Array(keyNames.length)
+  
   this._tickInterval = null
   this._tickRate = 0
   this._lastTick = Date.now()
@@ -75,7 +77,8 @@ function GameShell() {
   this._render = render.bind(undefined, this)
   
   for(var i=0; i<keyNames.length; ++i) {
-    this._curKeyState[i] = this._prevKeyState[i] = false
+    this._curKeyState[i] = false
+    this._pressCount[i] = this._releaseCount[i] = 0
   }
   
   //Public members
@@ -149,21 +152,50 @@ function lookupKey(state, bindings, key) {
   return false
 }
 
+//Checks if a key is set in a given state
+function lookupCount(state, bindings, key) {
+  if(key in bindings) {
+    var arr = bindings[key], r = 0
+    for(var i=0, n=arr.length; i<n; ++i) {
+      r += state[virtualKeyCode(arr[i])]
+    }
+    return r
+  }
+  var kc = virtualKeyCode(key)
+  if(kc >= 0) {
+    return state[kc]
+  }
+  return 0
+}
+
 //Checks if a key (either physical or virtual) is currently held down
 GameShell.prototype.down = function(key) {
   return lookupKey(this._curKeyState, this.bindings, key)
 }
 
-//Checks if a key (either physical or virtual) was held down on the previous frame
+//Checks if a key was ever down
 GameShell.prototype.wasDown = function(key) {
-  return lookupKey(this._prevKeyState, this.bindings, key)
+  return this.down(key) || this.press(key)
 }
 
-//Helper functions
-GameShell.prototype.pressed = function(key) { return  this.down(key) && !this.wasDown(key) }
-GameShell.prototype.release = function(key) { return !this.down(key) &&  this.wasDown(key) }
-GameShell.prototype.up      = function(key) { return !this.down(key) }
-GameShell.prototype.wasUp   = function(key) { return !this.wasDown(key) }
+//Opposite of down
+GameShell.prototype.up = function(key) {
+  return !this.down(key)
+}
+
+GameShell.prototype.wasUp = function(key) {
+  return this.up(key) || this.release(key)
+}
+
+//Returns the number of times a key was pressed since last tick
+GameShell.prototype.press = function(key) {
+  return lookupCount(this._pressCount, this.bindings, key)
+}
+
+//Returns the number of times a key was released since last tick
+GameShell.prototype.release = function(key) {
+  return lookupCount(this._releaseCount, this.bindings, key)
+}
 
 //Pause/unpause the game loop
 Object.defineProperty(GameShell.prototype, "paused", {
@@ -183,11 +215,24 @@ Object.defineProperty(GameShell.prototype, "paused", {
   }
 })
 
+//Set key state
+function setKeyState(shell, key, state) {
+  var ps = shell._curKeyState[key]
+  if(ps !== state) {
+    if(state) {
+      shell._pressCount[key]++
+    } else {
+      shell._releaseCount[key]++
+    }
+    shell._curKeyState[key] = state
+  }
+}
+
 //Ticks the game state one update
 function tick(shell) {
   var skip = Date.now() + shell.frameSkip
-    , cKeys = shell._curKeyState
-    , pKeys = shell._prevKeyState
+    , pCount = shell._pressCount
+    , rCount = shell._releaseCount
     , i, s, t
     , tr = shell._tickRate
     , n = keyNames.length
@@ -211,7 +256,7 @@ function tick(shell) {
     
     //Shift input state
     for(i=0; i<n; ++i) {
-      pKeys[i] = cKeys[i]
+      pCount[i] = rCount[i] = 0
     }
     shell.prevMouseX = shell.mouseX
     shell.prevMouseY = shell.mouseY
@@ -246,7 +291,7 @@ function render(shell) {
 function handleKeyUp(shell, ev) {
   var kc = physicalKeyCode(ev.keyCode || ev.which || ev.charCode)
   if(kc >= 0) {
-    shell._curKeyState[kc] = false
+    setKeyState(shell, kc, false)
   }
 }
 
@@ -254,7 +299,7 @@ function handleKeyUp(shell, ev) {
 function handleKeyDown(shell, ev) {
   var kc = physicalKeyCode(ev.keyCode || ev.char || ev.which || ev.charCode)
   if(kc >= 0) {
-    shell._curKeyState[kc] = true
+    setKeyState(shell, kc, true)
   }
 }
 
@@ -264,7 +309,7 @@ var mouseCodes = iota(5).map(function(n) {
 
 function setMouseButtons(shell, buttons) {
   for(var i=0; i<5; ++i) {
-    shell._curKeyState[mouseCodes[i]] = !!(buttons & (1<<i))
+    setKeyState(shell, mouseCodes[i], !!(buttons & (1<<i)))
   }
 }
 
@@ -281,12 +326,12 @@ function handleMouseMove(shell, ev) {
 
 function handleMouseDown(shell, ev) {
   handleMouseMove(shell, ev)
-  shell._curKeyState[mouseCodes[ev.button]] = true
+  setKeyState(shell, mouseCodes[ev.button], true)
 }
 
 function handleMouseUp(shell, ev) {
   handleMouseMove(shell, ev)
-  shell._curKeyState[mouseCodes[ev.button]] = false
+  setKeyState(shell, mouseCodes[ev.button], false)
 }
 
 function handleMouseEnter(shell, ev) {
@@ -297,7 +342,7 @@ function handleMouseEnter(shell, ev) {
 
 function handleMouseLeave(shell, ev) {
   for(var i=0; i<5; ++i) {
-    shell._curKeyState[mouseCodes[i]] = false
+    setKeyState(shell, mouseCodes[i], false)
   }
 }
 

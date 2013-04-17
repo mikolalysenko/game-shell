@@ -6,7 +6,7 @@ A generic shell for creating interactive demos/games in JavaScript.  This gives 
 * Virtual key bindings
 * A polling interface for key and mouse states
 * A request animation frame polyfill for rendering
-* A frame rate independent fixed update loop
+* A frame rate independent fixed time step update loop
 
 It is NOT:
 
@@ -37,20 +37,22 @@ shell.on("init", function() {
   canvas.height = 500
   document.body.appendChild(canvas)
   context = canvas.getContext("2d")
+
 })
 
 //Fired once per game tick
 shell.on("tick", function() {
-  if(shell.down("move-left")) {
+  console.log("Tick")
+  if(shell.wasDown("move-left")) {
     player_x -= 1
   }
-  if(shell.down("move-right")) {
+  if(shell.wasDown("move-right")) {
     player_x += 1
   }
-  if(shell.down("move-up")) {
+  if(shell.wasDown("move-up")) {
     player_y -= 1
   }
-  if(shell.down("move-down")) {
+  if(shell.wasDown("move-down")) {
     player_y += 1
   }
 })
@@ -111,10 +113,16 @@ Tests if `key` is currently held down.  `key` can be either a physical key or a 
 Tests if `key` is not being held down.
 
 ### `press(key)`
-Tests if `key` was pressed this frame.
+Returns the number of times a key was pressed since last tick
 
 ### `release(key)`
-Tests if `key` was released this frame.
+Returns the number of times a key was released since last tick
+
+### `wasDown(key)`
+Returns true if the key was ever down during the last tick
+
+### `wasUp(key)`
+Returns true if the key was ever up during the last tick
 
 ### `mouseX`, `mouseY`
 The x/y coordinates of the mouse relative to the element

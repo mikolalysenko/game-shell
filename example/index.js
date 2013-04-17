@@ -22,16 +22,17 @@ shell.on("init", function() {
 
 //Fired once per game tick
 shell.on("tick", function() {
-  if(shell.down("move-left")) {
+  console.log("Tick")
+  if(shell.wasDown("move-left")) {
     player_x -= 1
   }
-  if(shell.down("move-right")) {
+  if(shell.wasDown("move-right")) {
     player_x += 1
   }
-  if(shell.down("move-up")) {
+  if(shell.wasDown("move-up")) {
     player_y -= 1
   }
-  if(shell.down("move-down")) {
+  if(shell.wasDown("move-down")) {
     player_y += 1
   }
 })
