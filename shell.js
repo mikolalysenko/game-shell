@@ -12,19 +12,6 @@ var EventEmitter = require("events").EventEmitter
   , iota         = require("iota-array")
   , min          = Math.min
 
-//Remove prefixes from a string
-function removePrefixes(prefixes, str) {
-  var i, j, n = prefixes.length, p
-  for(i=0; i<n; ++i) {
-    p = prefixes[i]
-    j = str.indexOf(p)
-    if(j === 0) {
-      str = str.substring(p.length, str.length)
-    }
-  }
-  return str
-}
-
 //Remove angle braces and other useless crap
 var filtered_vkey = (function() {
   var result = new Array(256)
@@ -37,7 +24,6 @@ var filtered_vkey = (function() {
     if(k.charAt(0) === '<' && k.charAt(k.length-1) === '>') {
       k = k.substring(1, k.length-1)
     }
-    k = removePrefixes(["alt-", "control-", "shift-", "meta-"], k)
     k = k.replace(/\s/g, "-")
     result[parseInt(i)] = k
   }
