@@ -341,12 +341,23 @@ function handleBlur(shell, ev) {
   }
 }
 
+function makeDefaultContainer() {
+  var container = document.createElement("div")
+  container.style.position = "absolute"
+  container.style.left = "0px"
+  container.style.right = "0px"
+  container.style.top = "0px"
+  container.style.bottom = "0px"
+  document.body.appendChild(container)
+  return container
+}
+
 function createShell(options) {
   options = options || {}
   
   //Create initial shell
   var shell = new GameShell()
-  shell._tickRate = options.tickRate || 20
+  shell._tickRate = options.tickRate || 33
   shell.frameSkip = options.frameSkip || (shell._tickRate+5) * 5
   
   //Set bindings
@@ -368,7 +379,7 @@ function createShell(options) {
         e = document.getElementByClass(element)[0]
       }
       if(!e) {
-        e = document.body
+        e = makeDefaultContainer()
       }
       shell.element = e
     } else if(typeof element === "object" && !!element) {
@@ -376,7 +387,7 @@ function createShell(options) {
     } else if(typeof element === "function") {
       shell.element = element()
     } else {
-      shell.element = document.body
+      shell.element = makeDefaultContainer()
     }
     
     //Disable user-select
