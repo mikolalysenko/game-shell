@@ -357,7 +357,7 @@ function createShell(options) {
   
   //Create initial shell
   var shell = new GameShell()
-  shell._tickRate = options.tickRate || 33
+  shell._tickRate = options.tickRate || 30
   shell.frameSkip = options.frameSkip || (shell._tickRate+5) * 5
   
   //Set bindings

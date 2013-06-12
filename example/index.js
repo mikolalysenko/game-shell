@@ -21,7 +21,6 @@ shell.on("init", function() {
 
 //Fired once per game tick
 shell.on("tick", function() {
-  console.log("Tick")
   if(shell.wasDown("move-left")) {
     player_x -= 1
   }
