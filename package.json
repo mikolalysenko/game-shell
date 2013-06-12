@@ -1,6 +1,6 @@
 {
   "name": "game-shell",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Ready-to-go game shell",
   "main": "shell.js",
   "directories": {
@@ -8,11 +8,9 @@
   },
   "dependencies": {
     "domready": "~0.2.11",
-    "ever": "~0.0.3",
     "invert-hash": "~0.0.0",
     "lower-bound": "~0.0.1",
     "iota-array": "~0.0.0",
-    "raf": "~0.0.1",
     "uniq": "~0.0.2",
     "vkey": "~0.0.2"
   },

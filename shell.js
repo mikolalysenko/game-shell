@@ -2,15 +2,15 @@
 
 var EventEmitter = require("events").EventEmitter
   , util         = require("util")
-  , raf          = require("raf").polyfill
   , domready     = require("domready")
   , vkey         = require("vkey")
   , invert       = require("invert-hash")
   , uniq         = require("uniq")
   , lowerBound   = require("lower-bound")
-  , ever         = require("ever")
   , iota         = require("iota-array")
   , min          = Math.min
+
+require("./lib/raf-polyfill.js")
 
 //Remove angle braces and other useless crap
 var filtered_vkey = (function() {
@@ -270,7 +270,7 @@ function render(shell) {
   shell.frameTime = shell.frameTime * 0.3 + (t - s) * 0.7
   
   //Request next frame
-  raf(shell._render)
+  requestAnimationFrame(shell._render)
 }
 
 //Set key up
@@ -401,15 +401,14 @@ function createShell(options) {
     }
     
     //Hook input listeners
-    var ev = ever(shell.element)
-    ev.on("keydown", handleKeyDown.bind(undefined, shell))
-    ev.on("keyup", handleKeyUp.bind(undefined, shell))
-    ev.on("mousedown", handleMouseDown.bind(undefined, shell))
-    ev.on("mouseup", handleMouseUp.bind(undefined, shell))
-    ev.on("mousemove", handleMouseMove.bind(undefined, shell))
-    ev.on("mouseleave", handleMouseLeave.bind(undefined, shell))
-    ev.on("mouseenter", handleMouseEnter.bind(undefined, shell))
-    ev.on("blur", handleBlur.bind(undefined, shell))
+    window.addEventListener("keydown", handleKeyDown.bind(undefined, shell), true)
+    window.addEventListener("keyup", handleKeyUp.bind(undefined, shell), true)
+    window.addEventListener("mousedown", handleMouseDown.bind(undefined, shell), true)
+    window.addEventListener("mouseup", handleMouseUp.bind(undefined, shell), true)
+    window.addEventListener("mousemove", handleMouseMove.bind(undefined, shell), true)
+    window.addEventListener("mouseleave", handleMouseLeave.bind(undefined, shell), true)
+    window.addEventListener("mouseenter", handleMouseEnter.bind(undefined, shell), true)
+    window.addEventListener("blur", handleBlur.bind(undefined, shell), true)
     
     //Initialize tick counter
     shell._lastTick = Date.now()
@@ -420,7 +419,7 @@ function createShell(options) {
     shell._tickInterval = setInterval(tick, shell._tickRate, shell)
     
     //Create an animation frame handler
-    raf(shell._render)
+    requestAnimationFrame(shell._render)
     
     //Emit initialize event
     shell.emit("init")
