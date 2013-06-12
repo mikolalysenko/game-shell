@@ -355,7 +355,7 @@ function createShell(options) {
   }
   
   //Wait for dom to intiailize
-  domready(function() {
+  setTimeout(function() { domready(function() {
     
     //Retrieve element
     var element = options.element
@@ -377,6 +377,16 @@ function createShell(options) {
       shell.element = element()
     } else {
       shell.element = window
+    }
+    
+    //Disable user-select
+    if(shell.element.style) {
+      shell.element.style["-webkit-touch-callout"] = "none"
+      shell.element.style["-webkit-user-select"] = "none"
+      shell.element.style["-khtml-user-select"] = "none"
+      shell.element.style["-moz-user-select"] = "none"
+      shell.element.style["-ms-user-select"] = "none"
+      shell.element.style["user-select"] = "none"
     }
     
     //Hook input listeners
@@ -403,7 +413,7 @@ function createShell(options) {
     
     //Emit initialize event
     shell.emit("init")
-  })
+  })}, 0)
   
   return shell
 }
