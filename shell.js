@@ -368,7 +368,7 @@ function createShell(options) {
         e = document.getElementByClass(element)[0]
       }
       if(!e) {
-        e = window
+        e = document.body
       }
       shell.element = e
     } else if(typeof element === "object" && !!element) {
@@ -376,7 +376,7 @@ function createShell(options) {
     } else if(typeof element === "function") {
       shell.element = element()
     } else {
-      shell.element = window
+      shell.element = document.body
     }
     
     //Disable user-select

@@ -75,7 +75,7 @@ shell.on("render", function(frame_time) {
 
 ## `var shell = require("game-shell")([options])`
 
-* `element` - The DOM element to attach all input listeners to.  Can be either an element, a string representing the id, the CSS class or the element class. (default `window`)
+* `element` - The DOM element to attach all input listeners to.  Can be either an element, a string representing the id, the CSS class or the element class. (defaults to `document.body`)
 * `tickRate` - The time between ticks in milliseconds (default `20`)
 * `frameSkip` - The maximum alloted time between render updates (default `(tickRate+5)*5`)
 * `bindings` - A default set of key bindings
