@@ -366,7 +366,7 @@ function createShell(options) {
   }
   
   //Wait for dom to intiailize
-  setTimeout(function() { domready(function() {
+  setTimeout(function() { domready(function initGameShell() {
     
     //Retrieve element
     var element = options.element

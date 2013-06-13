@@ -15,7 +15,7 @@ shell.on("init", function() {
   var canvas = document.createElement("canvas")
   canvas.width = 500
   canvas.height = 500
-  document.body.appendChild(canvas)
+  shell.element.appendChild(canvas)
   context = canvas.getContext("2d")
 })
 
