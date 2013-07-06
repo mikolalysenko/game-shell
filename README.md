@@ -73,7 +73,9 @@ shell.on("render", function(frame_time) {
 
 # API
 
-## `var shell = require("game-shell")([options])`
+## Constructor
+
+### `var shell = require("game-shell")([options])`
 
 * `element` - The DOM element to attach all input listeners to.  Can be either an element, a string representing the id, the CSS class or the element class. (defaults to creating a new element and adding to `document.body`)
 * `tickRate` - The time between ticks in milliseconds (default `33`)
@@ -98,9 +100,6 @@ Binds a virtual key to one or more physical keys.  This is added to all previous
 
 ### `unbind(virtual_key)`
 Unbinds a virtual key, removing it from the bindings object
-
-### `bindings`
-An object which lists all of the physical keys which each virtual key is bound to.
 
 ### `keyNames`
 A list of all physical key names which are supported
@@ -129,24 +128,13 @@ The x/y coordinates of the mouse relative to the element
 ### `prevMouseX`, `prevMouseY`
 The x/y coordinates of the mouse on the previous frame.
 
-## State
+### `scroll`
+The amount the window scrolled due to mousewheel movement.  Represented as 3D array, the units are in pixels.
 
-### `paused`
-If set, then the game is paused and no tick events are fired.  You can pause the game by assigning to this variable:
-
-```javascript
-//Pause the game
-shell.paused = true
-
-//Unpause the game
-shell.paused = false
-```
+## Timing
 
 ### `frameSkip`
 Sets the threshold for time to skip the game
-
-### `element`
-The DOM element associated with the shell
 
 ### `tickCount`
 A count of the total number of ticks
@@ -162,6 +150,25 @@ A weighted average of the time required per frame in milliseconds
 
 ### `startTime`
 The time the simulation was started at in milliseconds
+
+## Miscellaneous
+
+### `paused`
+If set, then the game is paused and no tick events are fired.  You can pause the game by assigning to this variable:
+
+```javascript
+//Pause the game
+shell.paused = true
+
+//Unpause the game
+shell.paused = false
+```
+
+### `bindings`
+An object which lists all of the physical keys which each virtual key is bound to.
+
+### `element`
+The DOM element associated with the shell
 
 # Credits
 (c) 2013 Mikola Lysenko. MIT License

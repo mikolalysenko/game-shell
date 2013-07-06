@@ -10,7 +10,10 @@ var EventEmitter = require("events").EventEmitter
   , iota         = require("iota-array")
   , min          = Math.min
 
+//Browser compatibility hacks
 require("./lib/raf-polyfill.js")
+var addMouseWheel = require("./lib/mousewheel-polyfill.js")
+var hrtime = require("./lib/hrtime-polyfill.js")
 
 //Remove angle braces and other useless crap
 var filtered_vkey = (function() {
@@ -56,7 +59,7 @@ function GameShell() {
   
   this._tickInterval = null
   this._tickRate = 0
-  this._lastTick = Date.now()
+  this._lastTick = hrtime()
   this._frameTime = 0.0
   this._paused = false
   
@@ -73,9 +76,12 @@ function GameShell() {
   this.frameSkip = 100.0
   this.tickCount = 0
   this.frameCount = 0
-  this.startTime = Date.now()
+  this.startTime = hrtime()
   this.tickTime = this._tickRate
   this.frameTime = 10.0
+  
+  //Scroll stuff
+  this.scroll = [0,0,0]
   
   //Mouse state
   this.mouseX = 0
@@ -104,6 +110,11 @@ GameShell.prototype.bind = function(virtual_key) {
     physical_key = arguments[i]
     if(virtualKeyCode(physical_key) >= 0) {
       arr.push(physical_key)
+    } else if(physical_key in this.bindings) {
+      var keybinds = this.bindings[physical_key]
+      for(var j=0; j<keybinds.length; ++j) {
+        arr.push(keybinds[j])
+      }
     }
   }
   //Remove any duplicate keys
@@ -161,7 +172,7 @@ GameShell.prototype.down = function(key) {
 
 //Checks if a key was ever down
 GameShell.prototype.wasDown = function(key) {
-  return this.down(key) || this.press(key)
+  return this.down(key) || !!this.press(key)
 }
 
 //Opposite of down
@@ -169,8 +180,9 @@ GameShell.prototype.up = function(key) {
   return !this.down(key)
 }
 
+//Checks if a key was released during previous frame
 GameShell.prototype.wasUp = function(key) {
-  return this.up(key) || this.release(key)
+  return this.up(key) || !!this.release(key)
 }
 
 //Returns the number of times a key was pressed since last tick
@@ -192,11 +204,11 @@ Object.defineProperty(GameShell.prototype, "paused", {
     if(p) {
       if(!this._paused) {
         this._paused = true
-        this._frameTime = min(1.0, (Date.now() - this._lastTick) / this._tickRate)
+        this._frameTime = min(1.0, (hrtime() - this._lastTick) / this._tickRate)
       }
     } else if(this._paused) {
       this._paused = false
-      this._lastTick = Date.now() - Math.floor(this._frameTime * this._tickRate)
+      this._lastTick = hrtime() - Math.floor(this._frameTime * this._tickRate)
     }
   }
 })
@@ -216,17 +228,17 @@ function setKeyState(shell, key, state) {
 
 //Ticks the game state one update
 function tick(shell) {
-  var skip = Date.now() + shell.frameSkip
+  var skip = hrtime() + shell.frameSkip
     , pCount = shell._pressCount
     , rCount = shell._releaseCount
     , i, s, t
     , tr = shell._tickRate
     , n = keyNames.length
   while(!shell._paused &&
-        Date.now() >= shell._lastTick + tr) {
+        hrtime() >= shell._lastTick + tr) {
     //Skip a frame if we are over budget
-    if(Date.now() > skip) {
-      shell._lastTick = Date.now() + tr
+    if(hrtime() > skip) {
+      shell._lastTick = hrtime() + tr
       return
     }
     
@@ -235,9 +247,9 @@ function tick(shell) {
     shell._lastTick += tr
     
     //Tick the game
-    s = Date.now()
+    s = hrtime()
     shell.emit("tick")
-    t = Date.now()
+    t = hrtime()
     shell.tickTime = shell.tickTime * 0.3 + (t - s) * 0.7
     
     //Shift input state
@@ -246,6 +258,7 @@ function tick(shell) {
     }
     shell.prevMouseX = shell.mouseX
     shell.prevMouseY = shell.mouseY
+    shell.scroll[0] = shell.scroll[1] = shell.scroll[2] = 0
   }
 }
 
@@ -259,14 +272,14 @@ function render(shell) {
   if(shell._paused) {
     dt = shell._frameTime
   } else {
-    dt = min(1.0, (Date.now() - shell._lastTick) / shell._tickRate)
+    dt = min(1.0, (hrtime() - shell._lastTick) / shell._tickRate)
   }
   
   //Draw a frame
   ++shell.frameCount
-  var s = Date.now()
+  var s = hrtime()
   shell.emit("render", dt)
-  var t = Date.now()
+  var t = hrtime()
   shell.frameTime = shell.frameTime * 0.3 + (t - s) * 0.7
   
   //Request next frame
@@ -275,7 +288,7 @@ function render(shell) {
 
 //Set key up
 function handleKeyUp(shell, ev) {
-  var kc = physicalKeyCode(ev.keyCode || ev.which || ev.charCode)
+  var kc = physicalKeyCode(ev.keyCode || ev.char || ev.which || ev.charCode)
   if(kc >= 0) {
     setKeyState(shell, kc, false)
   }
@@ -289,56 +302,91 @@ function handleKeyDown(shell, ev) {
   }
 }
 
-var mouseCodes = iota(5).map(function(n) {
+//Mouse events are really annoying
+var mouseCodes = iota(32).map(function(n) {
   return virtualKeyCode("mouse-" + (n+1))
 })
 
 function setMouseButtons(shell, buttons) {
-  for(var i=0; i<5; ++i) {
+  for(var i=0; i<32; ++i) {
     setKeyState(shell, mouseCodes[i], !!(buttons & (1<<i)))
   }
 }
 
 function handleMouseMove(shell, ev) {
-  if(ev.which !== undefined) {
-    setMouseButtons(shell, ev.which)
-  }
   if(ev.buttons !== undefined) {
     setMouseButtons(shell, ev.buttons)
   }
-  shell.mouseX = ev.clientX
-  shell.mouseY = ev.clientY
+  shell.mouseX = ev.clientX - shell.element.offsetLeft
+  shell.mouseY = ev.clientY - shell.element.offsetTop
+  return false
 }
 
 function handleMouseDown(shell, ev) {
   handleMouseMove(shell, ev)
-  setKeyState(shell, mouseCodes[ev.button], true)
+  if(ev.buttons === undefined) {
+    setKeyState(shell, mouseCodes[ev.button], true)
+  }
+  return false
 }
 
 function handleMouseUp(shell, ev) {
   handleMouseMove(shell, ev)
-  setKeyState(shell, mouseCodes[ev.button], false)
+  if(ev.buttons === undefined) {
+    setKeyState(shell, mouseCodes[ev.button], false)
+  }
+  return false
 }
 
 function handleMouseEnter(shell, ev) {
   handleMouseMove(shell, ev)
   shell.prevMouseX = shell.mouseX = ev.clientX
   shell.prevMouseY = shell.mouseY = ev.clientY
+  return false
 }
 
 function handleMouseLeave(shell, ev) {
-  for(var i=0; i<5; ++i) {
-    setKeyState(shell, mouseCodes[i], false)
+  setMouseButtons(shell, 0)
+  return false
+}
+
+//Handle mouse wheel events
+function handleMouseWheel(shell, ev) {
+  var scale = 1
+  switch(ev.deltaMode) {
+    case 0: //Pixel
+      scale = 1
+    break
+    case 1: //Line
+      scale = 12
+    break
+    case 2: //Page
+       scale = shell.height
+    break
   }
+  //Add scroll
+  shell.scroll[0] +=  ev.deltaX * scale
+  shell.scroll[1] +=  ev.deltaY * scale
+  shell.scroll[2] += (ev.deltaZ * scale)||0.0
+  return false
+}
+
+function handleContexMenu(shell, ev) {
+  return false
 }
 
 function handleBlur(shell, ev) {
   var n = keyNames.length
     , c = shell._curKeyState
+    , r = shell._releaseCount
     , i
   for(i=0; i<n; ++i) {
+    if(c[i]) {
+      ++r[i]
+    }
     c[i] = false
   }
+  return false
 }
 
 function makeDefaultContainer() {
@@ -400,20 +448,43 @@ function createShell(options) {
       shell.element.style["user-select"] = "none"
     }
     
-    //Hook input listeners
+    //Hook keyboard listener
     window.addEventListener("keydown", handleKeyDown.bind(undefined, shell), true)
     window.addEventListener("keyup", handleKeyUp.bind(undefined, shell), true)
-    window.addEventListener("mousedown", handleMouseDown.bind(undefined, shell), true)
-    window.addEventListener("mouseup", handleMouseUp.bind(undefined, shell), true)
-    window.addEventListener("mousemove", handleMouseMove.bind(undefined, shell), true)
-    window.addEventListener("mouseleave", handleMouseLeave.bind(undefined, shell), true)
-    window.addEventListener("mouseenter", handleMouseEnter.bind(undefined, shell), true)
-    window.addEventListener("blur", handleBlur.bind(undefined, shell), true)
+
+    //Disable right click
+    shell.element.oncontextmenu = handleContexMenu.bind(undefined, shell)
+    
+    //Hook mouse listeners
+    shell.element.onmousedown = handleMouseDown.bind(undefined, shell)
+    shell.element.onmouseup = handleMouseUp.bind(undefined, shell)
+    shell.element.onmousemove = handleMouseMove.bind(undefined, shell)
+    shell.element.onmouseenter = handleMouseEnter.bind(undefined, shell)
+    
+    //Mouse leave
+    var leave = handleMouseLeave.bind(undefined, shell)
+    shell.element.onmouseleave = leave
+    shell.element.onmouseout = leave
+    window.addEventListener("mouseleave", leave, true)
+    window.addEventListener("mouseout", leave, true)
+    
+    //Blur event 
+    var blur = handleBlur.bind(undefined, shell)
+    shell.element.onblur = blur
+    window.addEventListener("blur", blur, true)
+
+    //Mouse wheel handler
+    addMouseWheel(shell.element, handleMouseWheel.bind(undefined, shell), false)
+  
+    //Default mouse button aliases
+    shell.bind("mouse-left",   "mouse-1")
+    shell.bind("mouse-right",  "mouse-3")
+    shell.bind("mouse-middle", "mouse-2")
     
     //Initialize tick counter
-    shell._lastTick = Date.now()
+    shell._lastTick = hrtime()
     shell._paused = false
-    shell.startTime = Date.now()
+    shell.startTime = hrtime()
     
     //Set up a tick interval
     shell._tickInterval = setInterval(tick, shell._tickRate, shell)
