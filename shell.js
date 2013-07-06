@@ -63,6 +63,8 @@ function GameShell() {
   this._lastTick = hrtime()
   this._frameTime = 0.0
   this._paused = true
+  this._width = 0
+  this._height = 0
   
   this._wantFullscreen = false
   this._wantPointerLock = false
@@ -315,6 +317,18 @@ Object.defineProperty(proto, "pointerLock", {
   }
 })
 
+//Width and height
+Object.defineProperty(proto, "width", {
+  get: function() {
+    return this.element.clientWidth
+  }
+})
+Object.defineProperty(proto, "height", {
+  get: function() {
+    return this.element.clientHeight
+  }
+})
+
 function handlePointerLockChange(shell, event) {
   shell._pointerLockActive = shell.element === (
       document.pointerLockElement ||
@@ -522,6 +536,16 @@ function handleBlur(shell, ev) {
   return false
 }
 
+function handleResizeElement(shell, ev) {
+  var w = shell.element.clientWidth|0
+  var h = shell.element.clientHeight|0
+  if((w !== shell._width) || (h !== shell._height)) {
+    shell._width = w
+    shell._height = h
+    shell.emit("resize", w, h)
+  }
+}
+
 function makeDefaultContainer() {
   var container = document.createElement("div")
   container.style.position = "absolute"
@@ -587,6 +611,21 @@ function createShell(options) {
       shell.element.style["-ms-user-select"] = "none"
       shell.element.style["user-select"] = "none"
     }
+    
+    //Hook resize handler
+    shell._width = shell.element.clientWidth
+    shell._height = shell.element.clientHeight
+    var handleResize = handleResizeElement.bind(undefined, shell)
+    if(typeof MutationObserver !== "undefined") {
+      var observer = new MutationObserver(handleResize)
+      observer.observe(shell.element, {
+        attributes: true,
+        subtree: true
+      })
+    } else {
+      shell.element.addEventListener("DOMSubtreeModified", handleResize, false)
+    }
+    window.addEventListener("resize", handleResize, false)
     
     //Hook keyboard listener
     window.addEventListener("keydown", handleKeyDown.bind(undefined, shell), true)

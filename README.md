@@ -5,6 +5,7 @@ A generic shell for creating interactive demos/games in JavaScript.  This gives 
 * A `init` event which is triggered on page load
 * A `render` event which is called every frame or as needed
 * A frame rate independent `tick` event that is called at uniform intervals
+* A `resize` event that gets called whenever the game changes size
 * Virtual key bindings
 * A polling interface for key and mouse states
 * Wrappers for fullscreen, pointer lock and precision timing APIs
@@ -89,6 +90,9 @@ Called each time the game state needs to be updated.  This is not tied to render
 ### `render ([frame_time])`
 Called when a frame is redrawn.  The optional parameter `frame_time` is a floating point value between `0` and `1` which measures the fractional amount of frames since the last time the game was ticked.  This can be used to create smoother sub-tick animations if desired.
 
+### `resize([w,h])`
+Triggered whenever the element is resized.  `w` is the new width and `h` is the new height of the element.
+
 ## Input
 
 ### `bind(virtual_key, physical_keys, ...)`
@@ -171,6 +175,12 @@ An object which lists all of the physical keys which each virtual key is bound t
 
 ### `element`
 The DOM element associated with the shell
+
+### `width`
+The width of the element contained by the shell
+
+### `height`
+The height of the element contained by the shell
 
 # Credits
 (c) 2013 Mikola Lysenko. MIT License
