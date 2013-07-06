@@ -1,4 +1,4 @@
-var shell = require("../shell")()
+var shell = require("../shell")({fullscreen:true})
 
 var context
   , player_x = 250

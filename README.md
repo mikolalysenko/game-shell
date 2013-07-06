@@ -78,6 +78,7 @@ shell.on("render", function(frame_time) {
 * `bindings` - A default set of key bindings
 * `fullscreen` - A flag which if set attempts to put the game in fullscreen mode
 * `pointerLock` - A flag which if set attempts to active pointer pointer lock (default true  for fullscreen, false otherwise)
+* `sticky` - If set to true, then keep trying to grab fullscreen/pointerLock even if user escapes out
 
 ## Events
 
@@ -95,32 +96,17 @@ Triggered whenever the element is resized.  `w` is the new width and `h` is the 
 
 ## Input
 
-### `bind(virtual_key, physical_keys, ...)`
-Binds a virtual key to one or more physical keys.  This is added to all previous bindings.
+### `wasDown(key)`
+Returns true if the key was ever down during the last tick
 
-### `unbind(virtual_key)`
-Unbinds a virtual key, removing it from the bindings object
-
-### `keyNames`
-A list of all physical key names which are supported
-
-### `down(key)`
-Tests if `key` is currently held down.  `key` can be either a physical key or a virtual key created by a binding.
-
-### `up(key)`
-Tests if `key` is not being held down.
+### `wasUp(key)`
+Returns true if the key was ever up during the last tick
 
 ### `press(key)`
 Returns the number of times a key was pressed since last tick
 
 ### `release(key)`
 Returns the number of times a key was released since last tick
-
-### `wasDown(key)`
-Returns true if the key was ever down during the last tick
-
-### `wasUp(key)`
-Returns true if the key was ever up during the last tick
 
 ### `mouseX`, `mouseY`
 The x/y coordinates of the mouse relative to the element
@@ -130,6 +116,18 @@ The x/y coordinates of the mouse on the previous frame.
 
 ### `scroll`
 The amount the window scrolled due to mousewheel movement.  Represented as 3D array, the units are in pixels.
+
+### `bind(virtual_key, physical_keys, ...)`
+Binds a virtual key to one or more physical keys.  This is added to all previous bindings.
+
+### `unbind(virtual_key)`
+Unbinds a virtual key, removing it from the bindings object
+
+### `keyNames`
+A list of all physical key names which are supported
+
+### `bindings`
+An object which lists all of the physical keys which each virtual key is bound to.  This can be used to save key state
 
 ## Timing
 
@@ -153,12 +151,6 @@ The time the simulation was started at in milliseconds
 
 ## Miscellaneous
 
-### `fullscreen`
-Sets or tests whether the game is fullscreen
-
-### `pointerLock`
-Sets or tests whether the game has a pointer lock
-
 ### `paused`
 If set, then the game is paused and no tick events are fired.  You can pause the game by assigning to this variable:
 
@@ -170,8 +162,14 @@ shell.paused = true
 shell.paused = false
 ```
 
-### `bindings`
-An object which lists all of the physical keys which each virtual key is bound to.
+### `fullscreen`
+Sets or tests whether the game is fullscreen
+
+### `pointerLock`
+Sets or tests whether the game has a pointer lock
+
+### `sticky`
+Same semantics as in ctor
 
 ### `element`
 The DOM element associated with the shell

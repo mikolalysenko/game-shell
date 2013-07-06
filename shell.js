@@ -87,6 +87,7 @@ function GameShell() {
   this.startTime = hrtime()
   this.tickTime = this._tickRate
   this.frameTime = 10.0
+  this.sticky = false
   
   //Scroll stuff
   this.scroll = [0,0,0]
@@ -271,10 +272,8 @@ Object.defineProperty(proto, "fullscreen", {
   set: function(state) {
     var ns = !!state
     if(!ns) {
-      if(this._wantFullscreen) {
-        this._wantFullscreen = false
-        cancelFullscreen.call(document)
-      }
+      this._wantFullscreen = false
+      cancelFullscreen.call(document)
     } else {
       this._wantFullscreen = true
       tryFullscreen(this)
@@ -288,15 +287,16 @@ function handleFullscreen(shell) {
                             document.mozFullScreen ||
                             document.webkitIsFullScreen ||
                             false
+  if(!shell.sticky && shell._fullscreenActive) {
+    shell._wantFullscreen = false
+  }
 }
 
 //Pointer lock state toggle
 var exitPointerLock = document.exitPointerLock ||
                       document.webkitExitPointerLock ||
                       document.mozExitPointerLock ||
-                      navigator.pointer ? function() {
-                        navigator.pointer.unlock()
-                      } :  function() {}
+                      function() {}
 
 Object.defineProperty(proto, "pointerLock", {
   get: function() {
@@ -305,10 +305,8 @@ Object.defineProperty(proto, "pointerLock", {
   set: function(state) {
     var ns = !!state
     if(!ns) {
-      if(this._wantPointerLock) {
-        this._wantPointerLock = false
-        exitPointerLock.call(document)
-      }
+      this._wantPointerLock = false
+      exitPointerLock.call(document)
     } else {
       this._wantPointerLock = true
       tryFullscreen(this)
@@ -316,6 +314,17 @@ Object.defineProperty(proto, "pointerLock", {
     return this._pointerLockActive
   }
 })
+
+function handlePointerLockChange(shell, event) {
+  shell._pointerLockActive = shell.element === (
+      document.pointerLockElement ||
+      document.mozPointerLockElement ||
+      document.webkitPointerLockElement ||
+      null)
+  if(!shell.sticky && shell._pointerLockActive) {
+    shell._wantPointerLock = false
+  }
+}
 
 //Width and height
 Object.defineProperty(proto, "width", {
@@ -329,13 +338,6 @@ Object.defineProperty(proto, "height", {
   }
 })
 
-function handlePointerLockChange(shell, event) {
-  shell._pointerLockActive = shell.element === (
-      document.pointerLockElement ||
-      document.mozPointerLockElement ||
-      document.webkitPointerLockElement ||
-      null)
-}
 
 //Set key state
 function setKeyState(shell, key, state) {
@@ -578,7 +580,8 @@ function createShell(options) {
   var shell = new GameShell()
   shell._tickRate = options.tickRate || 30
   shell.frameSkip = options.frameSkip || (shell._tickRate+5) * 5
-    
+  shell.sticky = !!options.sticky
+  
   //Set bindings
   if(options.bindings) {
     shell.bindings = bindings
