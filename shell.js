@@ -65,6 +65,7 @@ function GameShell() {
   this._paused = true
   
   this._wantFullscreen = false
+  this._wantPointerLock = false
   this._fullscreenActive = false
   this._pointerLockActive = false
   
@@ -229,16 +230,26 @@ Object.defineProperty(proto, "paused", {
 
 function tryFullscreen(shell) {
   //Request full screen
+  var elem = shell.element
+  
   if(shell._wantFullscreen && !shell._fullscreenActive) {
-    var elem = shell.element
-    var func = elem.requestFullscreen ||
-               elem.requestFullScreen ||
-               elem.webkitRequestFullscreen ||
-               elem.webkitRequestFullScreen ||
-               elem.mozRequestFullscreen ||
-               elem.mozRequestFullScreen ||
+    var fs = elem.requestFullscreen ||
+             elem.requestFullScreen ||
+             elem.webkitRequestFullscreen ||
+             elem.webkitRequestFullScreen ||
+             elem.mozRequestFullscreen ||
+             elem.mozRequestFullScreen ||
+             function() {}
+    fs.call(elem)
+  }
+  if(shell._wantPointerLock && !shell._pointerLockActive) {
+    var pl =  elem.requestPointerLock ||
+              elem.webkitRequestPointerLock ||
+              elem.mozRequestPointerLock ||
+              elem.msRequestPointerLock ||
+              elem.oRequestPointerLock ||
               function() {}
-    func.call(elem)
+    pl.call(elem)
   }
 }
 
@@ -257,15 +268,14 @@ Object.defineProperty(proto, "fullscreen", {
   },
   set: function(state) {
     var ns = !!state
-    if(ns !== this._fullscreenActive) {
-      if(!ns) {
-        //Cancel full screen
-        cancelFullscreen.call(document)
+    if(!ns) {
+      if(this._wantFullscreen) {
         this._wantFullscreen = false
-      } else {
-        this._wantFullscreen = true
-        tryFullscreen(this)
+        cancelFullscreen.call(document)
       }
+    } else {
+      this._wantFullscreen = true
+      tryFullscreen(this)
     }
     return this._fullscreenActive
   }
@@ -292,25 +302,14 @@ Object.defineProperty(proto, "pointerLock", {
   },
   set: function(state) {
     var ns = !!state
-    if(ns !== this._pointerLockActive) {
-      if(!ns) {
-        //Release pointer lock
+    if(!ns) {
+      if(this._wantPointerLock) {
+        this._wantPointerLock = false
         exitPointerLock.call(document)
-      } else {
-        //Request pointer lock
-        var element = this.element
-        if(element.requestPointerLock) {
-          element.requestPointerLock()
-        } else if(element.webkitRequestPointerLock) {
-          element.webkitRequestPointerLock()
-        } else if(element.mozRequestPointerLock) {
-          element.mozRequestPointerLock()
-        } else if(navigator.pointer) {
-          navigator.pointer.lock(element,
-            handlePointerLockChange.bind(undefined, this),
-            function(){})
-        }
       }
+    } else {
+      this._wantPointerLock = true
+      tryFullscreen(this)
     }
     return this._pointerLockActive
   }
@@ -439,13 +438,13 @@ function handleMouseMove(shell, ev) {
     setMouseButtons(shell, ev.buttons)
   }
   if(shell._pointerLockActive) {
-    var movementX = e.movementX       ||
-                    e.mozMovementX    ||
-                    e.webkitMovementX ||
+    var movementX = ev.movementX       ||
+                    ev.mozMovementX    ||
+                    ev.webkitMovementX ||
                     0,
-        movementY = e.movementY       ||
-                    e.mozMovementY    ||
-                    e.webkitMovementY ||
+        movementY = ev.movementY       ||
+                    ev.mozMovementY    ||
+                    ev.webkitMovementY ||
                     0
     shell.mouseX += movementX
     shell.mouseY += movementY
