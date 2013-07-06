@@ -58,10 +58,15 @@ function GameShell() {
   this._releaseCount = new Array(keyNames.length)
   
   this._tickInterval = null
+  this._rafHandle = null
   this._tickRate = 0
   this._lastTick = hrtime()
   this._frameTime = 0.0
-  this._paused = false
+  this._paused = true
+  
+  this._wantFullscreen = false
+  this._fullscreenActive = false
+  this._pointerLockActive = false
   
   this._render = render.bind(undefined, this)
   
@@ -82,7 +87,7 @@ function GameShell() {
   
   //Scroll stuff
   this.scroll = [0,0,0]
-  
+    
   //Mouse state
   this.mouseX = 0
   this.mouseY = 0
@@ -92,11 +97,13 @@ function GameShell() {
 
 util.inherits(GameShell, EventEmitter)
 
+var proto = GameShell.prototype
+
 //Bind keynames
-GameShell.prototype.keyNames = keyNames
+proto.keyNames = keyNames
 
 //Binds a virtual keyboard event to a physical key
-GameShell.prototype.bind = function(virtual_key) {
+proto.bind = function(virtual_key) {
   //Look up previous key bindings
   var arr
   if(virtual_key in this.bindings) {
@@ -125,7 +132,7 @@ GameShell.prototype.bind = function(virtual_key) {
 }
 
 //Unbinds a virtual keyboard event
-GameShell.prototype.unbind = function(virtual_key) {
+proto.unbind = function(virtual_key) {
   if(virtual_key in this.bindings) {
     delete this.bindings[virtual_key]
   }
@@ -166,52 +173,156 @@ function lookupCount(state, bindings, key) {
 }
 
 //Checks if a key (either physical or virtual) is currently held down
-GameShell.prototype.down = function(key) {
+proto.down = function(key) {
   return lookupKey(this._curKeyState, this.bindings, key)
 }
 
 //Checks if a key was ever down
-GameShell.prototype.wasDown = function(key) {
+proto.wasDown = function(key) {
   return this.down(key) || !!this.press(key)
 }
 
 //Opposite of down
-GameShell.prototype.up = function(key) {
+proto.up = function(key) {
   return !this.down(key)
 }
 
 //Checks if a key was released during previous frame
-GameShell.prototype.wasUp = function(key) {
+proto.wasUp = function(key) {
   return this.up(key) || !!this.release(key)
 }
 
 //Returns the number of times a key was pressed since last tick
-GameShell.prototype.press = function(key) {
+proto.press = function(key) {
   return lookupCount(this._pressCount, this.bindings, key)
 }
 
 //Returns the number of times a key was released since last tick
-GameShell.prototype.release = function(key) {
+proto.release = function(key) {
   return lookupCount(this._releaseCount, this.bindings, key)
 }
 
 //Pause/unpause the game loop
-Object.defineProperty(GameShell.prototype, "paused", {
+Object.defineProperty(proto, "paused", {
   get: function() {
     return this._paused
   },
-  set: function(p) {
-    if(p) {
+  set: function(state) {
+    var ns = !!state
+    if(ns !== this._paused) {
       if(!this._paused) {
         this._paused = true
         this._frameTime = min(1.0, (hrtime() - this._lastTick) / this._tickRate)
+        clearInterval(this._tickInterval)
+        cancelAnimationFrame(this._rafHandle)
+      } else {
+        this._paused = false
+        this._lastTick = hrtime() - Math.floor(this._frameTime * this._tickRate)
+        this._tickInterval = setInterval(tick, this._tickRate, this)
+        this._rafHandle = requestAnimationFrame(this._render)
       }
-    } else if(this._paused) {
-      this._paused = false
-      this._lastTick = hrtime() - Math.floor(this._frameTime * this._tickRate)
     }
   }
 })
+
+//Fullscreen state toggle
+
+function tryFullscreen(shell) {
+  //Request full screen
+  if(shell._wantFullscreen && !shell._fullscreenActive) {
+    var elem = shell.element
+    var func = elem.requestFullscreen ||
+               elem.requestFullScreen ||
+               elem.webkitRequestFullscreen ||
+               elem.webkitRequestFullScreen ||
+               elem.mozRequestFullscreen ||
+               elem.mozRequestFullScreen ||
+              function() {}
+    func.call(elem)
+  }
+}
+
+var cancelFullscreen = document.exitFullscreen ||
+                       document.cancelFullscreen ||  //Why can no one agree on this?
+                       document.cancelFullScreen ||
+                       document.webkitCancelFullscreen ||
+                       document.webkitCancelFullScreen ||
+                       document.mozCancelFullscreen ||
+                       document.mozCancelFullScreen ||
+                       function(){}
+
+Object.defineProperty(proto, "fullscreen", {
+  get: function() {
+    return this._fullscreenActive
+  },
+  set: function(state) {
+    var ns = !!state
+    if(ns !== this._fullscreenActive) {
+      if(!ns) {
+        //Cancel full screen
+        cancelFullscreen.call(document)
+        this._wantFullscreen = false
+      } else {
+        this._wantFullscreen = true
+        tryFullscreen(this)
+      }
+    }
+    return this._fullscreenActive
+  }
+})
+
+function handleFullscreen(shell) {
+  shell._fullscreenActive = document.fullscreen ||
+                            document.mozFullScreen ||
+                            document.webkitIsFullScreen ||
+                            false
+}
+
+//Pointer lock state toggle
+var exitPointerLock = document.exitPointerLock ||
+                      document.webkitExitPointerLock ||
+                      document.mozExitPointerLock ||
+                      navigator.pointer ? function() {
+                        navigator.pointer.unlock()
+                      } :  function() {}
+
+Object.defineProperty(proto, "pointerLock", {
+  get: function() {
+    return this._pointerLockActive
+  },
+  set: function(state) {
+    var ns = !!state
+    if(ns !== this._pointerLockActive) {
+      if(!ns) {
+        //Release pointer lock
+        exitPointerLock.call(document)
+      } else {
+        //Request pointer lock
+        var element = this.element
+        if(element.requestPointerLock) {
+          element.requestPointerLock()
+        } else if(element.webkitRequestPointerLock) {
+          element.webkitRequestPointerLock()
+        } else if(element.mozRequestPointerLock) {
+          element.mozRequestPointerLock()
+        } else if(navigator.pointer) {
+          navigator.pointer.lock(element,
+            handlePointerLockChange.bind(undefined, this),
+            function(){})
+        }
+      }
+    }
+    return this._pointerLockActive
+  }
+})
+
+function handlePointerLockChange(shell, event) {
+  shell._pointerLockActive = shell.element === (
+      document.pointerLockElement ||
+      document.mozPointerLockElement ||
+      document.webkitPointerLockElement ||
+      null)
+}
 
 //Set key state
 function setKeyState(shell, key, state) {
@@ -236,34 +347,44 @@ function tick(shell) {
     , n = keyNames.length
   while(!shell._paused &&
         hrtime() >= shell._lastTick + tr) {
-    //Skip a frame if we are over budget
+    
+    //Skip frames if we are over budget
     if(hrtime() > skip) {
       shell._lastTick = hrtime() + tr
       return
     }
     
-    //Update counters and time
-    ++shell.tickCount
-    shell._lastTick += tr
-    
     //Tick the game
     s = hrtime()
     shell.emit("tick")
     t = hrtime()
-    shell.tickTime = shell.tickTime * 0.3 + (t - s) * 0.7
+    shell.tickTime = t - s
+    
+    //Update counters and time
+    ++shell.tickCount
+    shell._lastTick += tr
     
     //Shift input state
     for(i=0; i<n; ++i) {
       pCount[i] = rCount[i] = 0
     }
-    shell.prevMouseX = shell.mouseX
-    shell.prevMouseY = shell.mouseY
+    if(shell._pointerLockActive) {
+      shell.prevMouseX = shell.prevMouseY = shell.mouseX = shell.mouseY = 0
+    } else {
+      shell.prevMouseX = shell.mouseX
+      shell.prevMouseY = shell.mouseY
+    }
     shell.scroll[0] = shell.scroll[1] = shell.scroll[2] = 0
   }
 }
 
 //Render stuff
 function render(shell) {
+  //If paused, don't do anything
+  if(shell._paused) {
+    return
+  }
+
   //Tick the shell
   tick(shell)
   
@@ -280,7 +401,7 @@ function render(shell) {
   var s = hrtime()
   shell.emit("render", dt)
   var t = hrtime()
-  shell.frameTime = shell.frameTime * 0.3 + (t - s) * 0.7
+  shell.frameTime = t - s
   
   //Request next frame
   requestAnimationFrame(shell._render)
@@ -317,8 +438,21 @@ function handleMouseMove(shell, ev) {
   if(ev.buttons !== undefined) {
     setMouseButtons(shell, ev.buttons)
   }
-  shell.mouseX = ev.clientX - shell.element.offsetLeft
-  shell.mouseY = ev.clientY - shell.element.offsetTop
+  if(shell._pointerLockActive) {
+    var movementX = e.movementX       ||
+                    e.mozMovementX    ||
+                    e.webkitMovementX ||
+                    0,
+        movementY = e.movementY       ||
+                    e.mozMovementY    ||
+                    e.webkitMovementY ||
+                    0
+    shell.mouseX += movementX
+    shell.mouseY += movementY
+  } else {
+    shell.mouseX = ev.clientX - shell.element.offsetLeft
+    shell.mouseY = ev.clientY - shell.element.offsetTop
+  }
   return false
 }
 
@@ -403,11 +537,18 @@ function makeDefaultContainer() {
 function createShell(options) {
   options = options || {}
   
+  //Check fullscreen and pointer lock flags
+  var useFullscreen = !!options.fullscreen
+  var usePointerLock = useFullscreen
+  if(typeof options.pointerLock !== undefined) {
+    usePointerLock = !!options.pointerLock
+  }
+  
   //Create initial shell
   var shell = new GameShell()
   shell._tickRate = options.tickRate || 30
   shell.frameSkip = options.frameSkip || (shell._tickRate+5) * 5
-  
+    
   //Set bindings
   if(options.bindings) {
     shell.bindings = bindings
@@ -419,9 +560,9 @@ function createShell(options) {
     //Retrieve element
     var element = options.element
     if(typeof element === "string") {
-      var e = document.getElementById(element)
+      var e = document.querySelector(element)
       if(!e) {
-        e = document.querySelector(element)
+        e = document.getElementById(element)
       }
       if(!e) {
         e = document.getElementByClass(element)[0]
@@ -475,6 +616,28 @@ function createShell(options) {
 
     //Mouse wheel handler
     addMouseWheel(shell.element, handleMouseWheel.bind(undefined, shell), false)
+    
+    //Fullscreen handler
+    var fullscreenChange = handleFullscreen.bind(undefined, shell)
+    document.addEventListener("fullscreenchange", fullscreenChange, false)
+    document.addEventListener("mozfullscreenchange", fullscreenChange, false)
+    document.addEventListener("webkitfullscreenchange", fullscreenChange, false)
+
+    //Stupid fullscreen hack
+    shell.element.addEventListener("click", tryFullscreen.bind(undefined, shell), true)
+
+    //Pointer lock change handler
+    var pointerLockChange = handlePointerLockChange.bind(undefined, shell)
+    document.addEventListener("pointerlockchange", pointerLockChange, false)
+    document.addEventListener("mozpointerlockchange", pointerLockChange, false)
+    document.addEventListener("webkitpointerlockchange", pointerLockChange, false)
+    document.addEventListener("pointerlocklost", pointerLockChange, false)
+    document.addEventListener("webkitpointerlocklost", pointerLockChange, false)
+    document.addEventListener("mozpointerlocklost", pointerLockChange, false)
+    
+    //Update flags
+    shell.fullscreen = useFullscreen
+    shell.pointerLock = usePointerLock
   
     //Default mouse button aliases
     shell.bind("mouse-left",   "mouse-1")
@@ -483,14 +646,10 @@ function createShell(options) {
     
     //Initialize tick counter
     shell._lastTick = hrtime()
-    shell._paused = false
     shell.startTime = hrtime()
-    
-    //Set up a tick interval
-    shell._tickInterval = setInterval(tick, shell._tickRate, shell)
-    
-    //Create an animation frame handler
-    requestAnimationFrame(shell._render)
+
+    //Unpause shell
+    shell.paused = false
     
     //Emit initialize event
     shell.emit("init")

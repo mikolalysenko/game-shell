@@ -3,17 +3,11 @@ game-shell
 A generic shell for creating interactive demos/games in JavaScript.  This gives you the following features:
 
 * A `init` event which is triggered on page load
+* A `render` event which is called every frame or as needed
+* A frame rate independent `tick` event that is called at uniform intervals
 * Virtual key bindings
 * A polling interface for key and mouse states
-* A request animation frame polyfill for rendering
-* A frame rate independent fixed time step update loop
-
-It is NOT:
-
-* A full game engine
-* Responsible for rendering
-* An entity/component system
-
+* Wrappers for fullscreen, pointer lock and precision timing APIs
 
 # Example
 
@@ -81,6 +75,8 @@ shell.on("render", function(frame_time) {
 * `tickRate` - The time between ticks in milliseconds (default `33`)
 * `frameSkip` - The maximum alloted time between render updates (default `(tickRate+5)*5`)
 * `bindings` - A default set of key bindings
+* `fullscreen` - A flag which if set attempts to put the game in fullscreen mode
+* `pointerLock` - A flag which if set attempts to active pointer pointer lock (default true  for fullscreen, false otherwise)
 
 ## Events
 
@@ -152,6 +148,12 @@ A weighted average of the time required per frame in milliseconds
 The time the simulation was started at in milliseconds
 
 ## Miscellaneous
+
+### `fullscreen`
+Sets or tests whether the game is fullscreen
+
+### `pointerLock`
+Sets or tests whether the game has a pointer lock
 
 ### `paused`
 If set, then the game is paused and no tick events are fired.  You can pause the game by assigning to this variable:
