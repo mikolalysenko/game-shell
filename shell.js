@@ -382,7 +382,8 @@ function tick(shell) {
       pCount[i] = rCount[i] = 0
     }
     if(shell._pointerLockActive) {
-      shell.prevMouseX = shell.prevMouseY = shell.mouseX = shell.mouseY = 0
+      shell.prevMouseX = shell.mouseX = shell.width>>1
+      shell.prevMouseY = shell.mouseY = shell.height>>1
     } else {
       shell.prevMouseX = shell.mouseX
       shell.prevMouseY = shell.mouseY
@@ -470,25 +471,31 @@ function handleMouseMove(shell, ev) {
 }
 
 function handleMouseDown(shell, ev) {
-  handleMouseMove(shell, ev)
   if(ev.buttons === undefined) {
     setKeyState(shell, mouseCodes[ev.button], true)
+  } else {
+    setMouseButtons(shell, ev.buttons)
   }
   return false
 }
 
 function handleMouseUp(shell, ev) {
-  handleMouseMove(shell, ev)
   if(ev.buttons === undefined) {
     setKeyState(shell, mouseCodes[ev.button], false)
+  } else {
+    setMouseButtons(shell, ev.buttons)
   }
   return false
 }
 
 function handleMouseEnter(shell, ev) {
-  handleMouseMove(shell, ev)
-  shell.prevMouseX = shell.mouseX = ev.clientX
-  shell.prevMouseY = shell.mouseY = ev.clientY
+  if(shell._pointerLockActive) {
+    shell.prevMouseX = shell.mouseX = shell.width>>1
+    shell.prevMouseY = shell.mouseY = shell.height>>1
+  } else {
+    shell.prevMouseX = shell.mouseX = ev.clientX - shell.element.offsetLeft
+    shell.prevMouseY = shell.mouseY = ev.clientY - shell.element.offsetTop
+  }
   return false
 }
 
