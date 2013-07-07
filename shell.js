@@ -563,6 +563,8 @@ function makeDefaultContainer() {
   container.style.right = "0px"
   container.style.top = "0px"
   container.style.bottom = "0px"
+  container.style.height = "100%"
+  container.style.overflow = "hidden"
   document.body.appendChild(container)
   return container
 }
@@ -666,6 +668,8 @@ function createShell(options) {
 
     //Mouse wheel handler
     addMouseWheel(shell.element, handleMouseWheel.bind(undefined, shell), false)
+    document.body.style.overflow = "hidden" //Prevent bounce
+    document.body.style.height = "100%"
     
     //Fullscreen handler
     var fullscreenChange = handleFullscreen.bind(undefined, shell)
