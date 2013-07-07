@@ -87,7 +87,8 @@ function GameShell() {
   this.startTime = hrtime()
   this.tickTime = this._tickRate
   this.frameTime = 10.0
-  this.sticky = false
+  this.stickyFullscreen = false
+  this.stuckyPointLock = false
   
   //Scroll stuff
   this.scroll = [0,0,0]
@@ -287,7 +288,7 @@ function handleFullscreen(shell) {
                             document.mozFullScreen ||
                             document.webkitIsFullScreen ||
                             false
-  if(!shell.sticky && shell._fullscreenActive) {
+  if(!shell.stickyFullscreen && shell._fullscreenActive) {
     shell._wantFullscreen = false
   }
 }
@@ -321,7 +322,7 @@ function handlePointerLockChange(shell, event) {
       document.mozPointerLockElement ||
       document.webkitPointerLockElement ||
       null)
-  if(!shell.sticky && shell._pointerLockActive) {
+  if(!shell.stickyPointerLock && shell._pointerLockActive) {
     shell._wantPointerLock = false
   }
 }
@@ -580,7 +581,8 @@ function createShell(options) {
   var shell = new GameShell()
   shell._tickRate = options.tickRate || 30
   shell.frameSkip = options.frameSkip || (shell._tickRate+5) * 5
-  shell.sticky = !!options.sticky
+  shell.stickyFullscreen = !!options.stickyFullscreen || !!options.sticky
+  shell.stickyPointerLock = !!options.stickPointerLock || !options.sticky
   
   //Set bindings
   if(options.bindings) {

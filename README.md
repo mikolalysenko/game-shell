@@ -165,11 +165,14 @@ shell.paused = false
 ### `fullscreen`
 Sets or tests whether the game is fullscreen
 
+### `stickyFullscreen`
+If set try to continuously reacquire fullscreen
+
 ### `pointerLock`
 Sets or tests whether the game has a pointer lock
 
-### `sticky`
-Same semantics as in ctor
+### `stickyPointerLock`
+If set try to continuously reacquire pointer lock
 
 ### `element`
 The DOM element associated with the shell
