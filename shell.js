@@ -452,9 +452,6 @@ function setMouseButtons(shell, buttons) {
 }
 
 function handleMouseMove(shell, ev) {
-  if(ev.buttons !== undefined) {
-    setMouseButtons(shell, ev.buttons)
-  }
   if(shell._pointerLockActive) {
     var movementX = ev.movementX       ||
                     ev.mozMovementX    ||
@@ -474,20 +471,12 @@ function handleMouseMove(shell, ev) {
 }
 
 function handleMouseDown(shell, ev) {
-  if(ev.buttons === undefined) {
-    setKeyState(shell, mouseCodes[ev.button], true)
-  } else {
-    setMouseButtons(shell, ev.buttons)
-  }
+  setKeyState(shell, mouseCodes[ev.button], true)
   return false
 }
 
 function handleMouseUp(shell, ev) {
-  if(ev.buttons === undefined) {
-    setKeyState(shell, mouseCodes[ev.button], false)
-  } else {
-    setMouseButtons(shell, ev.buttons)
-  }
+  setKeyState(shell, mouseCodes[ev.button], false)
   return false
 }
 
