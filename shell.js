@@ -219,7 +219,7 @@ Object.defineProperty(proto, "paused", {
         this._paused = true
         this._frameTime = min(1.0, (hrtime() - this._lastTick) / this._tickRate)
         clearInterval(this._tickInterval)
-        cancelAnimationFrame(this._rafHandle)
+        //cancelAnimationFrame(this._rafHandle)
       } else {
         this._paused = false
         this._lastTick = hrtime() - Math.floor(this._frameTime * this._tickRate)
@@ -397,10 +397,9 @@ function tick(shell) {
 
 //Render stuff
 function render(shell) {
-  //If paused, don't do anything
-  if(shell._paused) {
-    return
-  }
+
+  //Request next frame
+  shell._rafHandle = requestAnimationFrame(shell._render)
 
   //Tick the shell
   tick(shell)
@@ -420,8 +419,6 @@ function render(shell) {
   var t = hrtime()
   shell.frameTime = t - s
   
-  //Request next frame
-  requestAnimationFrame(shell._render)
 }
 
 //Set key up
