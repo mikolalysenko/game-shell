@@ -6,7 +6,7 @@ var EventEmitter = require("events").EventEmitter
   , vkey         = require("vkey")
   , invert       = require("invert-hash")
   , uniq         = require("uniq")
-  , lowerBound   = require("lower-bound")
+  , bsearch      = require("binary-search-bounds")
   , iota         = require("iota-array")
   , min          = Math.min
 
@@ -38,11 +38,7 @@ var keyNames = uniq(Object.keys(invert(filtered_vkey)))
 
 //Translates a virtual keycode to a normalized keycode
 function virtualKeyCode(key) {
-  var idx = lowerBound(keyNames, key)
-  if(idx < 0 || idx >= keyNames.length) {
-    return -1
-  }
-  return idx
+  return bsearch.eq(keyNames, key)
 }
 
 //Maps a physical keycode to a normalized keycode
@@ -339,7 +335,6 @@ Object.defineProperty(proto, "height", {
   }
 })
 
-
 //Set key state
 function setKeyState(shell, key, state) {
   var ps = shell._curKeyState[key]
@@ -421,8 +416,14 @@ function render(shell) {
   
 }
 
+function isFocused(shell) {
+  return (document.activeElement === document.body) ||
+         (document.activeElement === shell.element)
+}
+
 //Set key up
 function handleKeyUp(shell, ev) {
+  ev.preventDefault()
   var kc = physicalKeyCode(ev.keyCode || ev.char || ev.which || ev.charCode)
   if(kc >= 0) {
     setKeyState(shell, kc, false)
@@ -431,9 +432,18 @@ function handleKeyUp(shell, ev) {
 
 //Set key down
 function handleKeyDown(shell, ev) {
-  var kc = physicalKeyCode(ev.keyCode || ev.char || ev.which || ev.charCode)
-  if(kc >= 0) {
-    setKeyState(shell, kc, true)
+  if(!isFocused(shell)) {
+    return
+  }
+  if(ev.metaKey) {
+    //Hack: Clear key state when meta gets pressed to prevent keys sticking
+    handleBlur(shell, ev)
+  } else {
+    ev.preventDefault()
+    var kc = physicalKeyCode(ev.keyCode || ev.char || ev.which || ev.charCode)
+    if(kc >= 0) {
+      setKeyState(shell, kc, true)
+    }
   }
 }
 
@@ -544,6 +554,7 @@ function handleResizeElement(shell, ev) {
 
 function makeDefaultContainer() {
   var container = document.createElement("div")
+  container.tabindex = 1
   container.style.position = "absolute"
   container.style.left = "0px"
   container.style.right = "0px"
@@ -552,6 +563,8 @@ function makeDefaultContainer() {
   container.style.height = "100%"
   container.style.overflow = "hidden"
   document.body.appendChild(container)
+  document.body.style.overflow = "hidden" //Prevent bounce
+  document.body.style.height = "100%"
   return container
 }
 
@@ -628,35 +641,37 @@ function createShell(options) {
     window.addEventListener("resize", handleResize, false)
     
     //Hook keyboard listener
-    window.addEventListener("keydown", handleKeyDown.bind(undefined, shell), true)
-    window.addEventListener("keyup", handleKeyUp.bind(undefined, shell), true)
-
+    window.addEventListener("keydown", handleKeyDown.bind(undefined, shell), false)
+    window.addEventListener("keyup", handleKeyUp.bind(undefined, shell), false)
+    
     //Disable right click
     shell.element.oncontextmenu = handleContexMenu.bind(undefined, shell)
     
     //Hook mouse listeners
-    shell.element.onmousedown = handleMouseDown.bind(undefined, shell)
-    shell.element.onmouseup = handleMouseUp.bind(undefined, shell)
-    shell.element.onmousemove = handleMouseMove.bind(undefined, shell)
-    shell.element.onmouseenter = handleMouseEnter.bind(undefined, shell)
+    shell.element.addEventListener("mousedown", handleMouseDown.bind(undefined, shell), false)
+    shell.element.addEventListener("mouseup", handleMouseUp.bind(undefined, shell), false)
+    shell.element.addEventListener("mousemove", handleMouseMove.bind(undefined, shell), false)
+    shell.element.addEventListener("mouseenter", handleMouseEnter.bind(undefined, shell), false)
     
     //Mouse leave
     var leave = handleMouseLeave.bind(undefined, shell)
-    shell.element.onmouseleave = leave
-    shell.element.onmouseout = leave
-    window.addEventListener("mouseleave", leave, true)
-    window.addEventListener("mouseout", leave, true)
+    shell.element.addEventListener("mouseleave", leave, false)
+    shell.element.addEventListener("mouseout", leave, false)
+    window.addEventListener("mouseleave", leave, false)
+    window.addEventListener("mouseout", leave, false)
     
     //Blur event 
     var blur = handleBlur.bind(undefined, shell)
-    shell.element.onblur = blur
-    window.addEventListener("blur", blur, true)
+    shell.element.addEventListener("blur", blur, false)
+    shell.element.addEventListener("focusout", blur, false)
+    shell.element.addEventListener("focus", blur, false)
+    window.addEventListener("blur", blur, false)
+    window.addEventListener("focusout", blur, false)
+    window.addEventListener("focus", blur, false)
 
     //Mouse wheel handler
     addMouseWheel(shell.element, handleMouseWheel.bind(undefined, shell), false)
-    document.body.style.overflow = "hidden" //Prevent bounce
-    document.body.style.height = "100%"
-    
+
     //Fullscreen handler
     var fullscreenChange = handleFullscreen.bind(undefined, shell)
     document.addEventListener("fullscreenchange", fullscreenChange, false)
@@ -664,7 +679,7 @@ function createShell(options) {
     document.addEventListener("webkitfullscreenchange", fullscreenChange, false)
 
     //Stupid fullscreen hack
-    shell.element.addEventListener("click", tryFullscreen.bind(undefined, shell), true)
+    shell.element.addEventListener("click", tryFullscreen.bind(undefined, shell), false)
 
     //Pointer lock change handler
     var pointerLockChange = handlePointerLockChange.bind(undefined, shell)
