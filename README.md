@@ -10,6 +10,8 @@ A generic shell for creating interactive demos/games in JavaScript.  This gives 
 * A polling interface for key and mouse states
 * Wrappers for fullscreen, pointer lock and precision timing APIs
 
+This code is compatible with [browserify](http://browserify.org/) or [beefy](https://github.com/chrisdickinson/beefy).
+
 # Example
 
 ```javascript
