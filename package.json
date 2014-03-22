@@ -16,7 +16,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "browservefy example/index.js"
+    "test": "beefy example/index.js"
   },
   "repository": {
     "type": "git",
