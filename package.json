@@ -1,6 +1,6 @@
 {
   "name": "game-shell",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Ready-to-go game shell",
   "main": "shell.js",
   "directories": {
