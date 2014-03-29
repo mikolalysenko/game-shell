@@ -84,7 +84,7 @@ function GameShell() {
   this.tickTime = this._tickRate
   this.frameTime = 10.0
   this.stickyFullscreen = false
-  this.stuckyPointLock = false
+  this.stickyPointLock = false
   
   //Scroll stuff
   this.scroll = [0,0,0]
