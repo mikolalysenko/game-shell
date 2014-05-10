@@ -130,6 +130,7 @@ proto.bind = function(virtual_key) {
   if(arr.length > 0) {
     this.bindings[virtual_key] = arr
   }
+  this.emit('bind', virtual_key, arr)
 }
 
 //Unbinds a virtual keyboard event
@@ -137,6 +138,7 @@ proto.unbind = function(virtual_key) {
   if(virtual_key in this.bindings) {
     delete this.bindings[virtual_key]
   }
+  this.emit('unbind', virtual_key)
 }
 
 //Checks if a key is set in a given state
