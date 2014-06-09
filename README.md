@@ -96,6 +96,14 @@ Called when a frame is redrawn.  The optional parameter `frame_time` is a floati
 ### `resize([w,h])`
 Triggered whenever the element is resized.  `w` is the new width and `h` is the new height of the element.
 
+### `bind(virtual_key,arr)`
+
+Emitted when `bind()` is called.
+
+### `unbind(virtual_key)`
+
+Emitted when `unbind()` is called.
+
 ## Input
 
 ### `wasDown(key)`
