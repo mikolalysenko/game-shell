@@ -1,18 +1,18 @@
 {
   "name": "game-shell",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Ready-to-go game shell",
   "main": "shell.js",
   "directories": {
     "example": "example"
   },
   "dependencies": {
-    "domready": "~0.2.11",
+    "domready": "^1.0.5",
     "invert-hash": "~0.0.0",
-    "iota-array": "~0.0.0",
-    "uniq": "~0.0.2",
+    "iota-array": "^1.0.0",
+    "uniq": "^1.0.0",
     "vkey": "~0.0.2",
-    "binary-search-bounds": "~0.3.1"
+    "binary-search-bounds": "^1.0.0"
   },
   "devDependencies": {},
   "scripts": {
