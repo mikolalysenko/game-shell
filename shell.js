@@ -68,6 +68,8 @@ function GameShell() {
   this._pointerLockActive = false
   
   this._render = render.bind(undefined, this)
+
+  this.preventDefaults = true
   
   for(var i=0; i<keyNames.length; ++i) {
     this._curKeyState[i] = false
@@ -425,7 +427,9 @@ function isFocused(shell) {
 
 //Set key up
 function handleKeyUp(shell, ev) {
-  ev.preventDefault()
+  if(shell.preventDefaults) {
+    ev.preventDefault()
+  }
   var kc = physicalKeyCode(ev.keyCode || ev.char || ev.which || ev.charCode)
   if(kc >= 0) {
     setKeyState(shell, kc, false)
@@ -437,11 +441,13 @@ function handleKeyDown(shell, ev) {
   if(!isFocused(shell)) {
     return
   }
+  if(shell.preventDefaults) {
+    ev.preventDefault()
+  }
   if(ev.metaKey) {
     //Hack: Clear key state when meta gets pressed to prevent keys sticking
     handleBlur(shell, ev)
   } else {
-    ev.preventDefault()
     var kc = physicalKeyCode(ev.keyCode || ev.char || ev.which || ev.charCode)
     if(kc >= 0) {
       setKeyState(shell, kc, true)
@@ -461,6 +467,9 @@ function setMouseButtons(shell, buttons) {
 }
 
 function handleMouseMove(shell, ev) {
+  if(shell.preventDefaults) {
+    ev.preventDefault()
+  }
   if(shell._pointerLockActive) {
     var movementX = ev.movementX       ||
                     ev.mozMovementX    ||
@@ -480,16 +489,25 @@ function handleMouseMove(shell, ev) {
 }
 
 function handleMouseDown(shell, ev) {
+  if(shell.preventDefaults) {
+    ev.preventDefault()
+  }
   setKeyState(shell, mouseCodes[ev.button], true)
   return false
 }
 
 function handleMouseUp(shell, ev) {
+  if(shell.preventDefaults) {
+    ev.preventDefault()
+  }
   setKeyState(shell, mouseCodes[ev.button], false)
   return false
 }
 
 function handleMouseEnter(shell, ev) {
+  if(shell.preventDefaults) {
+    ev.preventDefault()
+  }
   if(shell._pointerLockActive) {
     shell.prevMouseX = shell.mouseX = shell.width>>1
     shell.prevMouseY = shell.mouseY = shell.height>>1
@@ -501,12 +519,18 @@ function handleMouseEnter(shell, ev) {
 }
 
 function handleMouseLeave(shell, ev) {
+  if(shell.preventDefaults) {
+    ev.preventDefault()
+  }
   setMouseButtons(shell, 0)
   return false
 }
 
 //Handle mouse wheel events
 function handleMouseWheel(shell, ev) {
+  if(shell.preventDefaults) {
+    ev.preventDefault()
+  }
   var scale = 1
   switch(ev.deltaMode) {
     case 0: //Pixel
@@ -527,6 +551,9 @@ function handleMouseWheel(shell, ev) {
 }
 
 function handleContexMenu(shell, ev) {
+  if(shell.preventDefaults) {
+    ev.preventDefault()
+  }
   return false
 }
 
