@@ -193,5 +193,8 @@ The width of the element contained by the shell
 ### `height`
 The height of the element contained by the shell
 
+### `preventDefaults`
+If set, trap event default behaviors.  (Good for fullscreen apps, can be annoying for some embedded applications). Default set to `true`
+
 # Credits
 (c) 2013 Mikola Lysenko. MIT License
