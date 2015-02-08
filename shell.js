@@ -608,7 +608,7 @@ function createShell(options) {
   
   //Set bindings
   if(options.bindings) {
-    shell.bindings = bindings
+    shell.bindings = options.bindings
   }
   
   //Wait for dom to intiailize
