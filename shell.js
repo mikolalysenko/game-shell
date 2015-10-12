@@ -87,7 +87,7 @@ function GameShell() {
   this.tickTime = this._tickRate
   this.frameTime = 10.0
   this.stickyFullscreen = false
-  this.stickyPointLock = false
+  this.stickyPointerLock = false
   
   //Scroll stuff
   this.scroll = [0,0,0]
@@ -604,7 +604,7 @@ function createShell(options) {
   shell._tickRate = options.tickRate || 30
   shell.frameSkip = options.frameSkip || (shell._tickRate+5) * 5
   shell.stickyFullscreen = !!options.stickyFullscreen || !!options.sticky
-  shell.stickyPointerLock = !!options.stickPointerLock || !options.sticky
+  shell.stickyPointerLock = !!options.stickyPointerLock || !!options.sticky
   
   //Set bindings
   if(options.bindings) {
