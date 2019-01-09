@@ -67,7 +67,7 @@ function GameShell() {
   this._fullscreenActive = false
   this._pointerLockActive = false
   
-  this._render = render.bind(undefined, this)
+  this._rafFunction = tickOrRender.bind(undefined, this, true)
 
   this.preventDefaults = true
   this.stopPropagation = false
@@ -224,8 +224,8 @@ Object.defineProperty(proto, "paused", {
       } else {
         this._paused = false
         this._lastTick = hrtime() - Math.floor(this._frameTime * this._tickRate)
-        this._tickInterval = setInterval(tick, this._tickRate, this)
-        this._rafHandle = requestAnimationFrame(this._render)
+        this._tickInterval = setInterval(tickOrRender, this._tickRate, this, false)
+        this._rafHandle = requestAnimationFrame(this._rafFunction)
       }
     }
   }
@@ -275,7 +275,11 @@ Object.defineProperty(proto, "fullscreen", {
     var ns = !!state
     if(!ns) {
       this._wantFullscreen = false
-      cancelFullscreen.call(document)
+      var hasFS = document.fullscreen ||
+                  document.mozFullScreen ||
+                  document.webkitIsFullScreen ||
+                  false
+      if (hasFS) cancelFullscreen.call(document)
     } else {
       this._wantFullscreen = true
       tryFullscreen(this)
@@ -353,6 +357,13 @@ function setKeyState(shell, key, state) {
   }
 }
 
+function tickOrRender(shell, doRender) {
+  tick(shell)
+  if (doRender) {
+    render(shell)
+  }
+}
+
 //Ticks the game state one update
 function tick(shell) {
   var skip = hrtime() + shell.frameSkip
@@ -399,11 +410,8 @@ function tick(shell) {
 function render(shell) {
 
   //Request next frame
-  shell._rafHandle = requestAnimationFrame(shell._render)
+  shell._rafHandle = requestAnimationFrame(shell._rafFunction)
 
-  //Tick the shell
-  tick(shell)
-  
   //Compute frame time
   var dt
   if(shell._paused) {
