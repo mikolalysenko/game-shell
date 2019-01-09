@@ -275,7 +275,11 @@ Object.defineProperty(proto, "fullscreen", {
     var ns = !!state
     if(!ns) {
       this._wantFullscreen = false
-      cancelFullscreen.call(document)
+      var hasFS = document.fullscreen ||
+                  document.mozFullScreen ||
+                  document.webkitIsFullScreen ||
+                  false
+      if (hasFS) cancelFullscreen.call(document)
     } else {
       this._wantFullscreen = true
       tryFullscreen(this)
